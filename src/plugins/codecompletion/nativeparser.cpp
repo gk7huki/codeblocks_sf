@@ -1904,7 +1904,7 @@ bool NativeParser::AddCompilerDirs(cbProject* project, ParserBase* parser)
     }
 
     // alloc array for project compiler AND "no. of targets" times target compilers
-    int nCompilers = 1 + project->GetBuildTargetsCount();
+    int nCompilers = 1; // + project->GetBuildTargetsCount();
     Compiler** Compilers = new Compiler* [nCompilers];
     memset(Compilers, 0, sizeof(Compiler*) * nCompilers);
     nCompilers = 0; // reset , use as insert index in the next for loop
@@ -1918,6 +1918,10 @@ bool NativeParser::AddCompilerDirs(cbProject* project, ParserBase* parser)
         if (   !parser->Options().platformCheck
             || (parser->Options().platformCheck && target->SupportsCurrentPlatform()) )
         {
+            // only for the project compiler
+            if (target->GetCompilerID() != project->GetCompilerID())
+                continue;
+
             // post-processed search dirs (from build scripts)
             if (compiler && generator)
                 AddIncludeDirsToParser(generator->GetCompilerSearchDirs(target), base, parser);
@@ -1927,13 +1931,13 @@ bool NativeParser::AddCompilerDirs(cbProject* project, ParserBase* parser)
             AddIncludeDirsToParser(target->GetIncludeDirs(), base, parser);
 
             // get the compiler
-            wxString CompilerIndex = target->GetCompilerID();
+            /*wxString CompilerIndex = target->GetCompilerID();
             Compiler* tgtCompiler = CompilerFactory::GetCompiler(CompilerIndex);
             if (tgtCompiler)
             {
                 Compilers[nCompilers] = tgtCompiler;
                 ++nCompilers;
-            }
+            }*/
         } // if (target)
     } // end loop over the targets
 
