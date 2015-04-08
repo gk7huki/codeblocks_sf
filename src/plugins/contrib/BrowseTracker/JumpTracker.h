@@ -138,7 +138,7 @@ class JumpTracker : public cbPlugin
         int      GetPreviousIndex(const int idx);
         int      GetNextIndex(const int idx);
 
-        enum{ maxJumpEntries = 20};
+        enum{ maxJumpEntries = 64};
         //#warning maxJumpEntries is incorrect
         // FIXME (ph#): allow user to set entry count
         ArrayOfJumpData m_ArrayOfJumpData;

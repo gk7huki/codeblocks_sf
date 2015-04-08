@@ -129,7 +129,7 @@ void JumpTracker::OnAttach()
     // Codeblocks Events registration
     Manager::Get()->RegisterEventSink(cbEVT_EDITOR_UPDATE_UI   , new cbEventFunctor<JumpTracker, CodeBlocksEvent>(this, &JumpTracker::OnEditorUpdateEvent));
    //-Manager::Get()->RegisterEventSink(cbEVT_EDITOR_ACTIVATED, new cbEventFunctor<JumpTracker, CodeBlocksEvent>(this, &JumpTracker::OnEditorActivated));
-    Manager::Get()->RegisterEventSink(cbEVT_EDITOR_DEACTIVATED, new cbEventFunctor<JumpTracker, CodeBlocksEvent>(this, &JumpTracker::OnEditorDeactivated));
+   //-Manager::Get()->RegisterEventSink(cbEVT_EDITOR_DEACTIVATED, new cbEventFunctor<JumpTracker, CodeBlocksEvent>(this, &JumpTracker::OnEditorDeactivated));
     Manager::Get()->RegisterEventSink(cbEVT_EDITOR_CLOSE, new cbEventFunctor<JumpTracker, CodeBlocksEvent>(this, &JumpTracker::OnEditorClosed));
 
     Manager::Get()->RegisterEventSink(cbEVT_APP_START_SHUTDOWN, new cbEventFunctor<JumpTracker, CodeBlocksEvent>(this, &JumpTracker::OnStartShutdown));
@@ -257,7 +257,7 @@ void JumpTracker::OnEditorUpdateEvent(CodeBlocksEvent& event)
         m_PosnLast = edPosn;
         m_FilenameLast = edFilename;
         //if ( m_cursor not_eq JumpDataContains(edFilename, edPosn) )
-            JumpDataAdd(edFilename, edPosn, edLine);
+        //    JumpDataAdd(edFilename, edPosn, edLine);
     }
 
     // If new line within half screen of old line, don't record current line
@@ -430,6 +430,8 @@ void JumpTracker::OnProjectClosing(CodeBlocksEvent& event)
     //if (not pProject) return; //It happens!
 
     m_bProjectClosing = true;
+
+    OnMenuJumpClear(event);
 }
 // ----------------------------------------------------------------------------
 void JumpTracker::OnProjectActivatedEvent(CodeBlocksEvent& event)
@@ -447,6 +449,8 @@ void JumpTracker::OnProjectActivatedEvent(CodeBlocksEvent& event)
     // Previous project was closing
     if (m_bProjectClosing)
         m_bProjectClosing = false;
+
+    OnMenuJumpClear(event);
 
 }//OnProjectActivatedEvent
 // ----------------------------------------------------------------------------
@@ -485,8 +489,8 @@ void JumpTracker::JumpDataAdd(const wxString& filename, const long posn, const l
 
     // Dont record position if line number is < 1 since a newly loaded
     // file always reports an event for line 0
-     if (lineNum < 1)       // user requested feature 2010/06/1
-        return;
+    //if (lineNum < 1)       // user requested feature 2010/06/1
+    //    return;
 
     // if current entry is identical edit line, just update position
     if ( JumpDataContains(m_cursor,filename, posn))
@@ -514,11 +518,11 @@ void JumpTracker::JumpDataAdd(const wxString& filename, const long posn, const l
 
     if ( kount == maxJumpEntries )
     {   //remove last item in the array
-        m_ArrayOfJumpData.RemoveAt(maxJumpEntries-1);
+        m_ArrayOfJumpData.RemoveAt(GetNextIndex(m_insertNext));
     }
 
    //initialize new item
-    m_insertNext = GetNextIndex(m_insertNext);
+    m_insertNext = GetNextIndex(m_cursor);
     m_ArrayOfJumpData.Insert(new JumpData(filename, posn), m_insertNext);
     m_cursor = m_insertNext;
 
@@ -787,6 +791,10 @@ void JumpTracker::OnMenuJumpClear(wxCommandEvent &/*event*/)
 {
     m_insertNext = m_cursor = maxJumpEntries;
     m_ArrayOfJumpData.Clear();
+
+    m_FilenameLast = wxEmptyString;
+    CodeBlocksEvent cbEvt;
+    OnEditorUpdateEvent(cbEvt);
 }
 // ----------------------------------------------------------------------------
 void JumpTracker::OnMenuJumpDump(wxCommandEvent &/*event*/)
