@@ -938,8 +938,8 @@ void cbDebuggerPlugin::RegisterValueTooltip()
 {
     typedef cbEventFunctor<cbDebuggerPlugin, CodeBlocksEvent> Event;
     Manager::Get()->RegisterEventSink(cbEVT_EDITOR_TOOLTIP, new Event(this, &cbDebuggerPlugin::ProcessValueTooltip));
-    Manager::Get()->RegisterEventSink(cbEVT_EDITOR_TOOLTIP_CANCEL,
-                                      new Event(this, &cbDebuggerPlugin::CancelValueTooltip));
+    //Manager::Get()->RegisterEventSink(cbEVT_EDITOR_TOOLTIP_CANCEL,
+    //                                  new Event(this, &cbDebuggerPlugin::CancelValueTooltip));
 }
 
 bool cbDebuggerPlugin::ShowValueTooltip(cb_unused int style)
@@ -960,9 +960,11 @@ void cbDebuggerPlugin::ProcessValueTooltip(CodeBlocksEvent& event)
         if (!wxGetKeyState(WXK_CONTROL))
             return;
     }
-
-    if (Manager::Get()->GetDebuggerManager()->GetInterfaceFactory()->IsValueTooltipShown())
-        return;
+    else
+    {
+        if (wxGetKeyState(WXK_CONTROL))
+            return;
+    }
 
     if (!ShowValueTooltip(event.GetInt()))
         return;
@@ -972,13 +974,16 @@ void cbDebuggerPlugin::ProcessValueTooltip(CodeBlocksEvent& event)
     if (!ed)
         return;
 
-    if (ed->IsContextMenuOpened())
-        return;
-
     // get rid of other calltips (if any) [for example the code completion one, at this time we
     // want the debugger value call/tool-tip to win and be shown]
     if (ed->GetControl()->CallTipActive())
         ed->GetControl()->CallTipCancel();
+
+    if (ed->IsContextMenuOpened())
+        return;
+
+    if (Manager::Get()->GetDebuggerManager()->GetInterfaceFactory()->IsValueTooltipShown())
+        return;
 
     wxPoint pt;
     pt.x = event.GetX();
@@ -988,7 +993,7 @@ void cbDebuggerPlugin::ProcessValueTooltip(CodeBlocksEvent& event)
     if (!token.empty())
     {
         pt = ed->GetControl()->ClientToScreen(pt);
-        OnValueTooltip(token, wxRect(pt.x - 5, pt.y, 10, 10));
+        OnValueTooltip(token, wxRect(pt.x, pt.y, 10, 10));
     }
 }
 
