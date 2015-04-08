@@ -423,6 +423,9 @@ void IncrementalSearch::OnKeyDown(wxKeyEvent& event)
             control->SetSelectionVoid(m_SelStart, m_SelEnd);
         }
         control->SetFocus();
+
+        if (!m_SearchText.empty())
+            m_pChoice->SetStringValue(m_SearchText);
     }
     else
     {
@@ -547,6 +550,9 @@ void IncrementalSearch::OnKillFocus(wxCommandEvent& /*event*/)
     if(m_pTextCtrl)
     {
         m_LastInsertionPoint = m_pTextCtrl->GetInsertionPoint();
+
+        if (!m_SearchText.empty())
+            m_pChoice->SetStringValue(m_SearchText);
     }
 }
 
@@ -601,7 +607,7 @@ void IncrementalSearch::SearchText()
         m_pToolbar->EnableTool(XRCID("idIncSearchClear"), true);
         m_pToolbar->EnableTool(XRCID("idIncSearchPrev"), (m_flags & wxSCI_FIND_REGEXP) == 0);
         m_pToolbar->EnableTool(XRCID("idIncSearchNext"), true);
-        m_pChoice->SetStringValue(m_SearchText);
+        //m_pChoice->SetStringValue(m_SearchText);
         DoSearch(m_NewPos);
     }
     else
@@ -628,6 +634,9 @@ void IncrementalSearch::OnClearText(wxCommandEvent& /*event*/)
 
 void IncrementalSearch::DoClearText()
 {
+    if (!m_SearchText.empty())
+        m_pChoice->SetStringValue(m_SearchText);
+
     m_pTextCtrl->Clear();
     SearchText();
 }
@@ -645,6 +654,9 @@ void IncrementalSearch::DoSearchPrev()
     // we search backward from one character before the ending of the last found phrase
     DoSearch(m_NewPos + m_LengthFound - 1, m_MaxPos, m_MinPos);
     HighlightText();
+
+    if (!m_SearchText.empty())
+        m_pChoice->SetStringValue(m_SearchText);
 }
 
 void IncrementalSearch::OnSearchNext(wxCommandEvent& /*event*/)
@@ -661,6 +673,9 @@ void IncrementalSearch::DoSearchNext()
     // we search backward from one character before the ending of the last found phrase
     DoSearch(m_NewPos + 1, m_MinPos, m_MaxPos);
     HighlightText();
+
+    if (!m_SearchText.empty())
+        m_pChoice->SetStringValue(m_SearchText);
 }
 
 void IncrementalSearch::HighlightText()
