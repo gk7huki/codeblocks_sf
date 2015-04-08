@@ -123,6 +123,9 @@ Document::Document() {
 	cb.SetPerLine(this);
 
 	pli = 0;
+/* C::B begin */
+	fileName = 0;
+/* C::B end */
 }
 
 Document::~Document() {

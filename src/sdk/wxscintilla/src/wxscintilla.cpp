@@ -4712,6 +4712,16 @@ wxString wxScintilla::GetLexerLanguage() const
     mbuf.AppendByte(0);
     return sci2wx(buf);
 }
+
+void wxScintilla::SetFileName(const char* file)
+{
+    SendMsg(SCI_SETFILENAME, 0, reinterpret_cast<uptr_t>(file));
+}
+
+void wxScintilla::SetCodeCompletionFunction(void* func)
+{
+    SendMsg(SCI_SETCCFUNCTION, 0, reinterpret_cast<uptr_t>(func));
+}
 /* C::B end */
 
 //----------------------------------------------------------------------

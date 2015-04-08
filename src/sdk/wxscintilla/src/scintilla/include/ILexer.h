@@ -44,6 +44,7 @@ public:
 	virtual const char * SCI_METHOD BufferPointer() = 0;
 	virtual int SCI_METHOD GetLineIndentation(int line) = 0;
 /* C::B begin */
+	virtual const char * SCI_METHOD GetFileName() { return 0; }
 	virtual ~IDocument(){}
 /* C::B end */
 };
@@ -60,6 +61,8 @@ enum { lvOriginal=0, lvSubStyles=1 };
 class ILexer {
 public:
 /* C::B begin */
+    // NOTE: We can use PrivateCall() instead, but then we need to maintain an enum of supported operations.
+	virtual void SCI_METHOD SetCodeCompletionFunction(const void* func) {}
 	virtual ~ILexer() {}
 /* C::B end */
 	virtual int SCI_METHOD Version() const = 0;

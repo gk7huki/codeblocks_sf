@@ -516,6 +516,9 @@ class LexState : public LexInterface {
 	int interfaceVersion;
 public:
 	int lexLanguage;
+/* C::B begin */
+	void *ccEvalFunction;
+/* C::B end */
 
 	explicit LexState(Document *pdoc_);
 	virtual ~LexState();
@@ -554,6 +557,9 @@ LexState::LexState(Document *pdoc_) : LexInterface(pdoc_) {
 	performingStyle = false;
 	interfaceVersion = lvOriginal;
 	lexLanguage = SCLEX_CONTAINER;
+/* C::B begin */
+	ccEvalFunction = 0;
+/* C::B end */
 }
 
 LexState::~LexState() {
@@ -584,6 +590,10 @@ void LexState::SetLexerModule(const LexerModule *lex) {
 		}
 		pdoc->LexerChanged();
 	}
+/* C::B begin */
+    if (instance)
+        instance->SetCodeCompletionFunction(ccEvalFunction);
+/* C::B end */
 }
 
 void LexState::SetLexer(uptr_t wParam) {
@@ -1059,6 +1069,23 @@ sptr_t ScintillaBase::WndProc(unsigned int iMessage, uptr_t wParam, sptr_t lPara
 
 	case SCI_GETSUBSTYLEBASES:
 		return StringResult(lParam, DocumentLexState()->GetSubStyleBases());
+/* C::B begin */
+    case SCI_SETFILENAME:
+        if (pdoc->fileName) {
+            delete[] pdoc->fileName;
+            pdoc->fileName = 0;
+        }
+        if (lParam) {
+            pdoc->fileName = new char[strlen(reinterpret_cast<const char *>(lParam))+1];
+            strcpy(pdoc->fileName, reinterpret_cast<const char *>(lParam));
+        }
+        break;
+
+    case SCI_SETCCFUNCTION:
+        DocumentLexState()->ccEvalFunction = reinterpret_cast<void *>(lParam);
+        DocumentLexState()->SetLexer(DocumentLexState()->lexLanguage);
+        break;
+/* C::B end */
 #endif
 
 	default:

@@ -242,6 +242,9 @@ private:
 public:
 
 	LexInterface *pli;
+/* C::B begin */
+    char *fileName;
+/* C::B end */
 
 	int eolMode;
 	/// Can also be SC_CP_UTF8 to enable UTF-8 mode
@@ -270,7 +273,9 @@ public:
 	int GetLineEndTypesActive() const { return cb.GetLineEndTypes(); }
 	virtual void InsertLine(int line);
 	virtual void RemoveLine(int line);
-
+/* C::B begin */
+    const char * SCI_METHOD GetFileName() { return fileName; }
+/* C::B end */
 	int SCI_METHOD Version() const {
 		return dvLineEnd;
 	}

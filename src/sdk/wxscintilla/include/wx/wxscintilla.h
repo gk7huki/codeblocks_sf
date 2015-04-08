@@ -5221,6 +5221,13 @@ public:
 
     void GrabSCIFocus();
     void LoadLexerLibrary(const wxString& path);
+
+    // Set the filename for this editor
+    void SetFileName(const char* file);
+
+    // Set Code Completion eval function for this editor
+    void SetCodeCompletionFunction(void* func);
+
 /* C::B end */
 };
 

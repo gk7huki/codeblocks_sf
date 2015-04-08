@@ -509,6 +509,10 @@ class LexerCPP : public ILexerWithSubStyles {
 	enum { activeFlag = 0x40 };
 	enum { ssIdentifier, ssDocKeyword };
 	SubStyles subStyles;
+/* C::B begin */
+    typedef bool (*EvalExpression_t)(const std::string& , bool , const std::string& , int );
+    EvalExpression_t ccEvalExpression;
+/* C::B end */
 public:
 	explicit LexerCPP(bool caseSensitive_) :
 		caseSensitive(caseSensitive_),
@@ -517,7 +521,10 @@ public:
 		setArithmethicOp(CharacterSet::setNone, "+-/*%"),
 		setRelOp(CharacterSet::setNone, "=!<>"),
 		setLogicalOp(CharacterSet::setNone, "|&"),
-		subStyles(styleSubable, 0x80, 0x40, activeFlag) {
+		subStyles(styleSubable, 0x80, 0x40, activeFlag),
+/* C::B begin */
+        ccEvalExpression(0) {
+/* C::B end */
 	}
 	virtual ~LexerCPP() {
 	}
@@ -581,7 +588,11 @@ public:
 	const char * SCI_METHOD GetSubStyleBases() {
 		return styleSubable;
 	}
-
+/* C::B begin */
+    void SCI_METHOD SetCodeCompletionFunction(const void* func) {
+        ccEvalExpression = reinterpret_cast<EvalExpression_t>(func);
+    }
+/* C::B end */
 	static ILexer *LexerFactoryCPP() {
 		return new LexerCPP(true);
 	}
@@ -710,6 +721,11 @@ void SCI_METHOD LexerCPP::Lex(unsigned int startPos, int length, int initStyle, 
 	bool inRERange = false;
 	bool seenDocKeyBrace = false;
 
+/* C::B begin */
+	std::string fileName;
+	if (pAccess->GetFileName())
+        fileName = pAccess->GetFileName();
+/* C::B end */
 	int lineCurrent = styler.GetLine(startPos);
 	if ((MaskActive(initStyle) == SCE_C_PREPROCESSOR) ||
       (MaskActive(initStyle) == SCE_C_COMMENTLINE) ||
@@ -1227,16 +1243,22 @@ void SCI_METHOD LexerCPP::Lex(unsigned int startPos, int length, int initStyle, 
 				} else if (sc.Match("include")) {
 					isIncludePreprocessor = true;
 				} else {
-					if (options.trackPreprocessor) {
+/* C::B begin */
+					if (options.trackPreprocessor && ccEvalExpression && !ccEvalExpression("", false, fileName, 0)) {
+/* C::B end */
 						if (sc.Match("ifdef") || sc.Match("ifndef")) {
 							bool isIfDef = sc.Match("ifdef");
 							int i = isIfDef ? 5 : 6;
                             std::string restOfLine = GetRestOfLine(styler, sc.currentPos + i, false);
-							bool foundDef = preprocessorDefinitions.find(restOfLine) != preprocessorDefinitions.end();
+/* C::B begin */
+							bool foundDef = ccEvalExpression(restOfLine, true, fileName, lineCurrent);
+/* C::B end */
 							preproc.StartSection(isIfDef == foundDef);
 						} else if (sc.Match("if")) {
 							std::string restOfLine = GetRestOfLine(styler, sc.currentPos + 2, true);
-							bool ifGood = EvaluateExpression(restOfLine, preprocessorDefinitions);
+/* C::B begin */
+							bool ifGood = ccEvalExpression(restOfLine, false, fileName, lineCurrent);
+/* C::B end */
 							preproc.StartSection(ifGood);
 						} else if (sc.Match("else")) {
 							if (!preproc.CurrentIfTaken()) {
@@ -1255,7 +1277,9 @@ void SCI_METHOD LexerCPP::Lex(unsigned int startPos, int length, int initStyle, 
 							if (!preproc.CurrentIfTaken()) {
 								// Similar to #if
                                 std::string restOfLine = GetRestOfLine(styler, sc.currentPos + 4, true);
-								bool ifGood = EvaluateExpression(restOfLine, preprocessorDefinitions);
+/* C::B begin */
+								bool ifGood = ccEvalExpression(restOfLine, false, fileName, lineCurrent);
+/* C::B end */
 								if (ifGood) {
 									preproc.InvertCurrentLevel();
 									activitySet = preproc.IsInactive() ? activeFlag : 0;
