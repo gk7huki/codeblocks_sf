@@ -83,6 +83,7 @@ class DLLIMPORT CCManager : public Mgr<CCManager>, wxEvtHandler
 
         /** mouse hover event */
         void OnEditorTooltip(CodeBlocksEvent& event);
+        void OnEditorTooltipCancel(CodeBlocksEvent& event);
 
         /** event handler to show the call tip, when user press Ctrl-Shift-Space */
         void OnShowCallTip(CodeBlocksEvent& event);

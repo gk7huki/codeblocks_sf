@@ -10,6 +10,7 @@
 #include "sdk_precomp.h"
 
 #include "ccmanager.h"
+#include "debuggermanager.h"
 
 #ifndef CB_PRECOMP
     #include <algorithm>
@@ -320,6 +321,7 @@ CCManager::CCManager() :
     Manager::Get()->RegisterEventSink(cbEVT_EDITOR_OPEN,        new CCEvent(this, &CCManager::OnEditorOpen));
     Manager::Get()->RegisterEventSink(cbEVT_EDITOR_CLOSE,       new CCEvent(this, &CCManager::OnEditorClose));
     Manager::Get()->RegisterEventSink(cbEVT_EDITOR_TOOLTIP,     new CCEvent(this, &CCManager::OnEditorTooltip));
+    Manager::Get()->RegisterEventSink(cbEVT_EDITOR_TOOLTIP_CANCEL, new CCEvent(this, &CCManager::OnEditorTooltipCancel));
     Manager::Get()->RegisterEventSink(cbEVT_SHOW_CALL_TIP,      new CCEvent(this, &CCManager::OnShowCallTip));
     Manager::Get()->RegisterEventSink(cbEVT_COMPLETE_CODE,      new CCEvent(this, &CCManager::OnCompleteCode));
     m_EditorHookID = EditorHooks::RegisterHook(new EditorHooks::HookFunctor<CCManager>(this, &CCManager::OnEditorHook));
@@ -652,6 +654,25 @@ void CCManager::OnEditorTooltip(CodeBlocksEvent& event)
         return;
     }
 
+    // check if debugger tooltip is shown
+    //if (Manager::Get()->GetDebuggerManager()->GetInterfaceFactory()->IsValueTooltipShown())
+    cbDebuggerPlugin* debuggerPlugin = Manager::Get()->GetDebuggerManager()->GetActiveDebugger();
+    if (debuggerPlugin && debuggerPlugin->ShowValueTooltip(event.GetInt()))
+    {
+        if (stc->CallTipActive() && event.GetExtraLong() == 0 && m_CallTipActive == wxSCI_INVALID_POSITION)
+            static_cast<wxScintilla*>(stc)->CallTipCancel();
+        return;
+    }
+
+    // check if the mouse is over the selected text
+    if (stc->GetSelectedText() != wxEmptyString)
+    {
+        int startPos = stc->GetSelectionStart();
+        int endPos = stc->GetSelectionEnd();
+        if (startPos <= pos && pos <= endPos)
+            return;
+    }
+
     int hlStart, hlEnd, argsPos;
     hlStart = hlEnd = argsPos = wxSCI_INVALID_POSITION;
     bool allowCallTip = true;
@@ -716,6 +737,28 @@ void CCManager::OnEditorTooltip(CodeBlocksEvent& event)
         event.SetExtraLong(1);
     }
     m_CallTipActive = wxSCI_INVALID_POSITION;
+}
+
+// cbEVT_EDITOR_TOOLTIP_CANCEL
+void CCManager::OnEditorTooltipCancel(CodeBlocksEvent& event)
+{
+    event.Skip();
+
+    if (wxGetKeyState(WXK_CONTROL))
+        return;
+
+    EditorBase* base = event.GetEditor();
+    cbEditor* ed = base && base->IsBuiltinEditor() ? static_cast<cbEditor*>(base) : nullptr;
+    if (!ed || ed->IsContextMenuOpened())
+        return;
+
+    cbCodeCompletionPlugin* ccPlugin = GetProviderFor(ed);
+    if (!ccPlugin)
+        return;
+
+    cbStyledTextCtrl* stc = ed->GetControl();
+    if (stc->CallTipActive() && event.GetExtraLong() == 0 && m_CallTipActive == wxSCI_INVALID_POSITION)
+        static_cast<wxScintilla*>(stc)->CallTipCancel();
 }
 
 void CCManager::OnEditorHook(cbEditor* ed, wxScintillaEvent& event)
