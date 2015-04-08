@@ -278,6 +278,49 @@ namespace CodeCompletionHelper
 
 }//namespace CodeCompletionHelper
 
+// NOTE: This will be called by the Scintilla CPP lexer.
+// The lexer can check whether parsing is done by sending an empty line and check the result for false.
+// Lexer will also send the filename for additional tests (check order if preproc token defined and used within the same file).
+extern "C" PLUGIN_EXPORT bool CalcPreprocExpression(const std::string& line, bool isMacro, const std::string& file, int lineCurrent)
+{
+    PluginElement* plugElem = Manager::Get()->GetPluginManager()->FindElementByName(_T("CodeCompletion"));
+    if (!plugElem)
+        return true;
+
+    CodeCompletion* pCCPlugin = dynamic_cast<CodeCompletion*>(plugElem->plugin);
+    if (!pCCPlugin || !pCCPlugin->IsAttached() || !pCCPlugin->IsInitDone())
+        return true;
+
+    if (pCCPlugin->GetNativeParser().IsTempParser())
+        return true;
+
+    if (!pCCPlugin->GetNativeParser().GetParser().Done())
+        return true;
+
+    wxString fileName(file.c_str(), wxConvUTF8);
+    wxString buffer(line.c_str(), wxConvUTF8);
+    buffer += _T('\n');
+    TokenTree* tree = pCCPlugin->GetNativeParser().GetParser().GetTokenTree();
+    Tokenizer smallTokenizer(tree);
+    smallTokenizer.InitFromBuffer(buffer, fileName, lineCurrent);
+
+    if (!tree->GetFileIndex(smallTokenizer.GetFilename()))
+        return true;
+
+    if (line.empty())
+        return false;
+
+    bool result;
+    CC_LOCKER_TRACK_TT_MTX_LOCK(s_TokenTreeMutex);
+    if (isMacro)
+        result = smallTokenizer.IsMacroDefined(true);
+    else
+        result = smallTokenizer.CalcConditionExpression(true);
+    CC_LOCKER_TRACK_TT_MTX_UNLOCK(s_TokenTreeMutex);
+
+    return result;
+}
+
 // empty bitmap for use as C++ keywords icon in code-completion list
 /* XPM */
 static const char * cpp_keyword_xpm[] = {
@@ -2540,6 +2583,11 @@ void CodeCompletion::OnParserEnd(wxCommandEvent& event)
     cbEditor* editor = edMan->GetBuiltinActiveEditor();
     if (editor)
     {
+        // update inactive code colouring for the active editor.
+        // TODO: merge this with UpdateEditorSyntax()? What about split views?
+        if (editor->GetControl())
+            editor->GetControl()->Colourise(0, -1);
+
         m_ToolbarNeedReparse = true;
         TRACE(_T("CodeCompletion::OnParserEnd: Starting m_TimerToolbar."));
         m_TimerToolbar.Start(TOOLBAR_REFRESH_DELAY, wxTIMER_ONE_SHOT);
@@ -3547,6 +3595,12 @@ void CodeCompletion::OnEditorActivatedTimer(cb_unused wxTimerEvent& event)
     TRACE(_T("CodeCompletion::OnEditorActivatedTimer(): Need to notify NativeParser and Refresh toolbar."));
 
     m_NativeParser.OnEditorActivated(editor);
+
+    // update inactive code colouring for the active editor.
+    // TODO: merge this with UpdateEditorSyntax()?
+    if (m_LastEditor->GetControl())
+        m_LastEditor->GetControl()->Colourise(0, -1);
+
     TRACE(_T("CodeCompletion::OnEditorActivatedTimer: Starting m_TimerToolbar."));
     m_TimerToolbar.Start(TOOLBAR_REFRESH_DELAY, wxTIMER_ONE_SHOT);
     TRACE(_T("CodeCompletion::OnEditorActivatedTimer(): Current activated file is %s"), curFile.wx_str());

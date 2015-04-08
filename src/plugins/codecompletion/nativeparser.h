@@ -64,6 +64,9 @@ public:
     /** return a reference to the currently active Parser object */
     ParserBase& GetParser() { return *m_Parser; }
 
+    /** return true if current parser is temp parser */
+    bool IsTempParser() { return m_Parser == m_TempParser; }
+
     /** return the Parser pointer corresponding to the input C::B project
      * @param project input C::B project pointer
      * @return a pointer to parser object

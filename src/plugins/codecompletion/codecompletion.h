@@ -142,6 +142,10 @@ public:
     /** read CC's options, mostly happens the user change some setting and press APPLY */
     void RereadOptions(); // called by the configuration panel
 
+    /** accessors for global functions*/
+    bool IsInitDone() { return m_InitDone; }
+    NativeParser& GetNativeParser() { return m_NativeParser; }
+
 private:
     /** update CC's ToolBar, the user may disable the first wxChoice, so we need to recreate the
      * wxChoice and measure the best fit size

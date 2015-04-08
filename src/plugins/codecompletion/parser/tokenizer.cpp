@@ -183,7 +183,9 @@ bool Tokenizer::InitFromBuffer(const wxString& buffer, const wxString& fileOfBuf
 
     while (m_Filename.Replace(_T("\\"),_T("/"))) { ; }
 
-    m_FileIdx = m_TokenTree->GetFileIndex(m_Filename);
+    m_FileIdx = 0;
+    if (!m_Filename.IsEmpty())
+        m_FileIdx = m_TokenTree->GetFileIndex(m_Filename);
 
     return true;
 }
@@ -1077,7 +1079,7 @@ bool Tokenizer::CheckMacroUsageAndReplace()
 // now, we rewind the m_TokenIndex to the "begin", and run DoGetToken(), thus we get all the
 // expanded tokens like "1+1 == 2"
 // thus, we can calculate the expression.
-bool Tokenizer::CalcConditionExpression()
+bool Tokenizer::CalcConditionExpression(bool checkResult)
 {
     // need to force the tokenizer to read raw expression
     const TokenizerState oldState = m_State;
@@ -1126,7 +1128,19 @@ bool Tokenizer::CalcConditionExpression()
                     exp.AddToInfixExpression(_T("0"));
             }
             else
+            {
+                if (checkResult && m_FileIdx)
+                {
+                    const Token* tk = m_TokenTree->at(m_TokenTree->TokenExists(token, -1, tkMacroDef));
+                    if (tk && tk->m_FileIdx == (unsigned int)m_FileIdx && tk->m_Line >= m_LineNumber)
+                    {
+                        exp.AddToInfixExpression(_T("0"));
+                        continue;
+                    }
+                }
+
                 exp.AddToInfixExpression(token); // not a macro usage token
+            }
         }
         else if (token.StartsWith(_T("0x"))) // hex value
         {
@@ -1155,7 +1169,7 @@ bool Tokenizer::CalcConditionExpression()
     return false;
 }
 
-bool Tokenizer::IsMacroDefined()
+bool Tokenizer::IsMacroDefined(bool checkResult)
 {
     // pattern 1: #ifdef ( xxx )
     // pattern 2: #ifdef xxx
@@ -1180,6 +1194,17 @@ bool Tokenizer::IsMacroDefined()
             ;
         Lex(); // eat the ")"
     }
+
+    if (checkResult && id != -1)
+    {
+        Token* tk = m_TokenTree->at(id);
+        if (tk && m_FileIdx && tk->m_FileIdx == (unsigned int)m_FileIdx)
+        {
+            if (tk->m_Line >= m_LineNumber)
+                return false;
+        }
+    }
+
     return (id != -1);
 }
 

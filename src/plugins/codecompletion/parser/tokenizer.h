@@ -185,6 +185,18 @@ public:
         return m_TokenIndex < m_BufferLen;
     }
 
+    /** #if xxxx, calculate the value of "xxxx"
+      * @param checkResult if true, checks the order in which token is defined and used
+      *  (for now only supported within the same file).
+      */
+    bool CalcConditionExpression(bool checkResult = false);
+
+    /** If the next token string is macro usage, return true
+      * @param checkResult if true, checks the order in which token is defined and used
+      *  (for now only supported within the same file).
+      */
+    bool IsMacroDefined(bool checkResult = false);
+
     /** Backward buffer replacement for re-parsing
      *
      * @param target the new text going to replace some text on the m_Buffer
@@ -388,12 +400,6 @@ private:
             return m_Buffer.GetChar(m_TokenIndex - 2) == _T('\\');
         return last == _T('\\');
     }
-
-    /** #if xxxx, calculate the value of "xxxx" */
-    bool CalcConditionExpression();
-
-    /** If the next token string is macro usage, return true */
-    bool IsMacroDefined();
 
     /** handle the statement: #define XXXXX */
     void HandleDefines();
