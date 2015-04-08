@@ -158,6 +158,24 @@ namespace LibLoader
 //static
 bool PluginManager::s_SafeMode = false;
 
+wxDynamicLibrary* PluginManager::LoadPluginLibrary(const wxString& pluginName)
+{
+    return LibLoader::LoadLibrary(pluginName);
+}
+
+void PluginManager::UnloadPluginLibrary(wxDynamicLibrary* library)
+{
+    return LibLoader::RemoveLibrary(library);
+}
+
+void* PluginManager::GetPluginSymbol(wxDynamicLibrary* library, const wxString& symbol)
+{
+    if (library->IsLoaded() && library->HasSymbol(symbol))
+        return library->GetSymbol(symbol);
+
+    return nullptr;
+}
+
 BEGIN_EVENT_TABLE(PluginManager, wxEvtHandler)
 //
 END_EVENT_TABLE()

@@ -106,7 +106,8 @@ struct cbEditorInternalData
         m_byteOrderMarkLength(0),
         m_lineNumbersWidth(0),
         m_lineNumbersWidth2(0),
-        m_pFileLoader(fileLoader)
+        m_pFileLoader(fileLoader),
+        m_pCCPluginLib(nullptr)
     {
         m_encoding = wxLocale::GetSystemEncoding();
 
@@ -496,6 +497,8 @@ struct cbEditorInternalData
     int m_lineNumbersWidth2;
 
     LoaderBase* m_pFileLoader;
+
+    wxDynamicLibrary* m_pCCPluginLib;
 };
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -737,6 +740,13 @@ cbEditor::~cbEditor()
     }
     DestroySplitView();
 
+    // release CC Plugin for this editor (dec ref count).
+    if (m_pData->m_pCCPluginLib)
+    {
+        PluginManager::UnloadPluginLibrary(m_pData->m_pCCPluginLib);
+        m_pData->m_pCCPluginLib = nullptr;
+    }
+
     delete m_pData;
 }
 
@@ -747,6 +757,12 @@ void cbEditor::DoInitializations(const wxString& filename, LoaderBase* fileLdr)
     m_pData = new cbEditorInternalData(this);//, fileLdr);
     m_pData->m_pFileLoader = fileLdr;
     m_IsBuiltinEditor = true;
+
+    // get hold of CC Plugin for this editor (incr the ref count).
+    // TODO: Ensure we're getting the correct plugin in case another plugin uses the same name.
+    PluginElement* plugElem = Manager::Get()->GetPluginManager()->FindElementByName(_T("CodeCompletion"));
+    if (plugElem)
+        m_pData->m_pCCPluginLib = PluginManager::LoadPluginLibrary(plugElem->fileName);
 
     if (!filename.IsEmpty())
     {
@@ -1014,6 +1030,10 @@ cbStyledTextCtrl* cbEditor::CreateEditor()
 
     for (int marker = 0 ; marker <= wxSCI_MARKNUM_LASTUNUSED ; ++marker)
         control->MarkerDefine(marker, wxSCI_MARK_EMPTY);
+
+    // pass CC eval function (for use with "grey out inactive preproc" feature).
+    if (m_pData->m_pCCPluginLib)
+        control->SetCodeCompletionFunction(PluginManager::GetPluginSymbol(m_pData->m_pCCPluginLib, _T("CalcPreprocExpression")));
 
     return control;
 }
@@ -1557,6 +1577,7 @@ void cbEditor::InternalSetEditorStyleAfterFileOpen(cbStyledTextCtrl* control)
 
     // Interpret #if/#else/#endif to grey out code that is not active
     control->SetProperty(_T("lexer.cpp.track.preprocessor"), mgr->ReadBool(_T("/track_preprocessor"), true) ? _T("1") : _T("0"));
+    control->SetProperty(_T("lexer.cpp.update.preprocessor"), _T("0")); // get results from CC plugin instead
 
     // code folding
     if (mgr->ReadBool(_T("/folding/show_folds"), true))
@@ -1725,6 +1746,8 @@ bool cbEditor::Open(bool detectEncoding)
     Manager::Get()->GetLogManager()->DebugLog(F(_T("cbEditor::Open() => Encoding detection and conversion took : %d ms"),(int)sw.Time()));
     sw.Start();
 #endif
+
+    m_pControl->SetFileName(m_Filename.mb_str(wxConvUTF8).data());
 
     m_pControl->InsertText(0, enc.GetWxStr());
     m_pControl->EmptyUndoBuffer(mgr->ReadBool(_T("/margin/use_changebar"), true));

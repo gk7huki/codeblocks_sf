@@ -92,6 +92,13 @@ class DLLIMPORT PluginManager : public Mgr<PluginManager>, public wxEvtHandler
         void UnloadPlugin(cbPlugin* plugin);
         int ExecutePlugin(const wxString& pluginName);
 
+        // Load a library or incr the ref count if already loaded.
+        static wxDynamicLibrary* LoadPluginLibrary(const wxString& pluginName);
+        static void UnloadPluginLibrary(wxDynamicLibrary* library);
+
+        // Get a symbol from loaded library.
+        static void* GetPluginSymbol(wxDynamicLibrary* library, const wxString& symbol);
+
         bool AttachPlugin(cbPlugin* plugin, bool ignoreSafeMode = false);
         bool DetachPlugin(cbPlugin* plugin);
 
