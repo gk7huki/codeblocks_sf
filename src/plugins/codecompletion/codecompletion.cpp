@@ -587,6 +587,8 @@ void CodeCompletion::OnAttach()
 
     pm->RegisterEventSink(cbEVT_WORKSPACE_CHANGED,    new cbEventFunctor<CodeCompletion, CodeBlocksEvent>(this, &CodeCompletion::OnWorkspaceChanged));
 
+    //pm->RegisterEventSink(cbEVT_BUILDTARGET_SELECTED, new cbEventFunctor<CodeCompletion, CodeBlocksEvent>(this, &CodeCompletion::OnBuildTargetSelected));
+
     pm->RegisterEventSink(cbEVT_PROJECT_ACTIVATE,     new cbEventFunctor<CodeCompletion, CodeBlocksEvent>(this, &CodeCompletion::OnProjectActivated));
     pm->RegisterEventSink(cbEVT_PROJECT_CLOSE,        new cbEventFunctor<CodeCompletion, CodeBlocksEvent>(this, &CodeCompletion::OnProjectClosed));
     pm->RegisterEventSink(cbEVT_PROJECT_SAVE,         new cbEventFunctor<CodeCompletion, CodeBlocksEvent>(this, &CodeCompletion::OnProjectSaved));
@@ -2262,6 +2264,26 @@ void CodeCompletion::OnWorkspaceChanged(CodeBlocksEvent& event)
                 m_NativeParser.UpdateClassBrowser();
         }
     }
+    event.Skip();
+}
+
+void CodeCompletion::OnBuildTargetSelected(CodeBlocksEvent& event)
+{
+    if (!ProjectManager::IsBusy() && IsAttached() && m_InitDone)
+    {
+        cbProject* project = Manager::Get()->GetProjectManager()->GetActiveProject();
+        if (project)
+        {
+            TRACE(_T("CodeCompletion::OnBuildTargetSelected(): Reparsing entire project."));
+
+            ReparsingMap::iterator it = m_ReparsingMap.find(project);
+            if (it != m_ReparsingMap.end())
+                m_ReparsingMap.erase(it);
+            if (m_NativeParser.DeleteParser(project))
+                m_NativeParser.CreateParser(project);
+        }
+    }
+
     event.Skip();
 }
 
