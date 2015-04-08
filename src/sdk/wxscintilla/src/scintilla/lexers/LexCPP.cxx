@@ -204,14 +204,46 @@ std::string GetRestOfLine(LexAccessor &styler, int start, bool allowSpace) {
 	int i =0;
 	char ch = styler.SafeGetCharAt(start, '\n');
 	int endLine = styler.LineEnd(styler.GetLine(start));
-	while (((start+i) < endLine) && (ch != '\r')) {
+	bool inComment = false;
+	while (((start+i) < endLine) && (ch != '\r') && (ch != '\n')) {
 		char chNext = styler.SafeGetCharAt(start + i + 1, '\n');
-		if (ch == '/' && (chNext == '/' || chNext == '*'))
-			break;
-		if (allowSpace || (ch != ' '))
-			restOfLine += ch;
-		i++;
-		ch = chNext;
+        if (ch == '/' && !inComment)
+        {
+            if (chNext == '/')
+                break;
+            if (chNext == '*')
+            {
+                i++;
+                chNext = styler.SafeGetCharAt(start + i + 1, '\n');
+                inComment = true;
+            }
+        }
+        if (inComment)
+        {
+            if (ch == '*' && chNext == '/')
+            {
+                i++;
+                chNext = styler.SafeGetCharAt(start + i + 1, '\n');
+                inComment = false;
+            }
+            i++;
+            ch = chNext;
+            continue;
+        }
+        // check for line continuation.
+        if (ch == '\\' && (chNext == '\r' || chNext == '\n' || (start + i + 1) == endLine))
+        {
+            i = 0;
+            start = styler.LineStart(styler.GetLine(start) + 1);
+            endLine = styler.LineEnd(styler.GetLine(start) + 1);
+            ch = styler.SafeGetCharAt(start, '\n');
+            continue;
+        }
+
+        if (allowSpace || (ch != ' '))
+            restOfLine += ch;
+        i++;
+        ch = chNext;
 	}
 	return restOfLine;
 }
@@ -1199,7 +1231,7 @@ void SCI_METHOD LexerCPP::Lex(unsigned int startPos, int length, int initStyle, 
 						if (sc.Match("ifdef") || sc.Match("ifndef")) {
 							bool isIfDef = sc.Match("ifdef");
 							int i = isIfDef ? 5 : 6;
-							std::string restOfLine = GetRestOfLine(styler, sc.currentPos + i + 1, false);
+                            std::string restOfLine = GetRestOfLine(styler, sc.currentPos + i, false);
 							bool foundDef = preprocessorDefinitions.find(restOfLine) != preprocessorDefinitions.end();
 							preproc.StartSection(isIfDef == foundDef);
 						} else if (sc.Match("if")) {
@@ -1222,7 +1254,7 @@ void SCI_METHOD LexerCPP::Lex(unsigned int startPos, int length, int initStyle, 
 							// Ensure only one chosen out of #if .. #elif .. #elif .. #else .. #endif
 							if (!preproc.CurrentIfTaken()) {
 								// Similar to #if
-								std::string restOfLine = GetRestOfLine(styler, sc.currentPos + 2, true);
+                                std::string restOfLine = GetRestOfLine(styler, sc.currentPos + 4, true);
 								bool ifGood = EvaluateExpression(restOfLine, preprocessorDefinitions);
 								if (ifGood) {
 									preproc.InvertCurrentLevel();
@@ -1331,15 +1363,21 @@ void SCI_METHOD LexerCPP::Fold(unsigned int startPos, int length, int initStyle,
 	int levelMinCurrent = levelCurrent;
 	int levelNext = levelCurrent;
 	char chNext = styler[startPos];
-	int styleNext = MaskActive(styler.StyleAt(startPos));
+    int realStyleNext = styler.StyleAt(startPos);
+    int styleNext = MaskActive(realStyleNext);
 	int style = MaskActive(initStyle);
+    if (style != initStyle) style = SCE_C_DEFAULT;
+    if (styleNext != realStyleNext) styleNext = SCE_C_DEFAULT;
+
 	const bool userDefinedFoldMarkers = !options.foldExplicitStart.empty() && !options.foldExplicitEnd.empty();
 	for (unsigned int i = startPos; i < endPos; i++) {
 		char ch = chNext;
 		chNext = styler.SafeGetCharAt(i + 1);
 		int stylePrev = style;
 		style = styleNext;
-		styleNext = MaskActive(styler.StyleAt(i + 1));
+        realStyleNext = styler.StyleAt(i + 1);
+        styleNext = MaskActive(realStyleNext);
+        if (styleNext != realStyleNext) styleNext = SCE_C_DEFAULT;
 		bool atEOL = i == (lineStartNext-1);
 		if ((style == SCE_C_COMMENTLINE) || (style == SCE_C_COMMENTLINEDOC))
 			inLineComment = true;
