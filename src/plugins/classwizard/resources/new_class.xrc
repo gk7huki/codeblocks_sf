@@ -209,7 +209,7 @@
 																<object class="wxStaticText" name="ID_STATICTEXT13">
 																	<label>Scope:</label>
 																</object>
-																<flag>wxTOP|wxRIGHT|wxALIGN_LEFT|wxALIGN_TOP</flag>
+																<flag>wxTOP|wxRIGHT|wxALIGN_TOP</flag>
 																<border>4</border>
 															</object>
 															<object class="sizeritem">
@@ -224,7 +224,7 @@
 																<flag>wxEXPAND</flag>
 															</object>
 														</object>
-														<flag>wxALIGN_LEFT|wxALIGN_TOP</flag>
+														<flag>wxALIGN_LEFT</flag>
 													</object>
 													<object class="sizeritem">
 														<object class="wxCheckBox" name="chkGetter">
