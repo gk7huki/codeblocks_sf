@@ -722,7 +722,10 @@ class GdbCmd_InfoProgram : public DebuggerCmd
             {
                 long pid;
                 if (pid_str.ToLong(&pid, 10) && pid != 0)
+                {
                     m_pDriver->SetChildPID(pid);
+                    m_pDriver->GetDebugger()->Log(wxString::Format(_("Child process PID: %ld"), pid));
+                }
             }
         }
 };

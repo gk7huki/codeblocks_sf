@@ -503,6 +503,7 @@ void GDB_driver::Start(bool breakOnEntry)
     {
         m_ManualBreakOnEntry = !remoteDebugging;
         // start the process
+        #if 0
         if (breakOnEntry)
             QueueCommand(new GdbCmd_Start(this, remoteDebugging ? _T("continue") : _T("start")));
         else
@@ -511,6 +512,9 @@ void GDB_driver::Start(bool breakOnEntry)
             m_ManualBreakOnEntry=false;  // must be reset or gdb does not stop at first breakpoint
             QueueCommand(new GdbCmd_Start(this, remoteDebugging ? _T("continue") : _T("run")));
         }
+        #endif
+        // NOTE(huki): use "start" command so we can break on entry and run "info program" to get the pid
+        QueueCommand(new GdbCmd_Start(this, remoteDebugging ? _T("continue") : _T("start")));
         m_IsStarted = true;
     }
 } // Start
@@ -778,6 +782,7 @@ void GDB_driver::ParseOutput(const wxString& output)
 {
     m_Cursor.changed = false;
 
+    // NOTE(huki): this doesn't work on linux with GDB 7 - the pid given in the output is wrong
     if (platform::windows && m_ChildPID == 0)
     {
         if (reChildPid2.Matches(output)) // [New Thread 2684.0xf40] or [New thread 2684.0xf40]
@@ -1177,7 +1182,11 @@ void GDB_driver::HandleMainBreakPoint(const wxRegEx& reBreak_in, wxString line)
             QueueCommand(new GdbCmd_InfoProgram(this), DebuggerDriver::High);
 
         if (m_ManualBreakOnEntry && !m_BreakOnEntry)
+        {
+            m_ManualBreakOnEntry = false;
+            m_ProgramIsStopped = true;
             Continue();
+        }
         else
         {
             m_ManualBreakOnEntry = false;
