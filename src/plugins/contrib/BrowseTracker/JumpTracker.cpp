@@ -254,10 +254,11 @@ void JumpTracker::OnEditorUpdateEvent(CodeBlocksEvent& event)
     // New editor activated?
     if (m_FilenameLast not_eq edFilename)
     {
-        m_PosnLast = edPosn;
+        //-m_PosnLast = edPosn;
         m_FilenameLast = edFilename;
         //if ( m_cursor not_eq JumpDataContains(edFilename, edPosn) )
-        //    JumpDataAdd(edFilename, edPosn, edLine);
+        //-    JumpDataAdd(edFilename, edPosn, edLine);
+        return;
     }
 
     // If new line within half screen of old line, don't record current line
