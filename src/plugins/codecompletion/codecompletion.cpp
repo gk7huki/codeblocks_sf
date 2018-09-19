@@ -1315,8 +1315,7 @@ std::vector<CodeCompletion::CCToken> CodeCompletion::GetTokenAt(int pos, cbEdito
     const int style = stc->GetStyleAt(pos);
     if (   stc->IsString(style)
         || stc->IsComment(style)
-        || stc->IsCharacter(style)
-        || stc->IsPreprocessor(style) )
+        || stc->IsCharacter(style) )
     {
         return tokens;
     }

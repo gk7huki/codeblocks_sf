@@ -751,8 +751,7 @@ void CCManager::OnEditorTooltip(CodeBlocksEvent& event)
     else if (  allowCallTip
              && !(   stc->IsString(style)
                   || stc->IsComment(style)
-                  || stc->IsCharacter(style)
-                  || stc->IsPreprocessor(style) ) )
+                  || stc->IsCharacter(style) ) )
     {
         const int line = stc->LineFromPosition(pos);
         if (pos + 4 > stc->PositionFromLine(line) + (int)ed->GetLineIndentString(line).Length())
