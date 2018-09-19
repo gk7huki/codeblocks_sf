@@ -1333,7 +1333,7 @@ void cbEditor::InternalSetEditorStyleBeforeFileOpen(cbStyledTextCtrl* control)
         font.SetNativeFontInfo(nfi);
     }
 
-    control->SetMouseDwellTime(1000);
+    control->SetMouseDwellTime(300);
 
     int caretStyle = mgr->ReadInt(_T("/caret/style"), wxSCI_CARETSTYLE_LINE);
     control->SetCaretStyle(caretStyle);
