@@ -1277,13 +1277,12 @@ void ValueTooltip::OnTimer(cb_unused wxTimerEvent &event)
 
     wxPoint mouse = wxGetMousePosition();
     wxRect rect = GetScreenRect();
-    rect.Inflate(5);
+
+    // NOTE (huki): Manage tooltip cancel on mouse move - let the user move the
+    // cursor into the debugger tooltip (eg, to expand an item), dismiss the tooltip
+    // when mouse is moved significantly away from the tooltip.
+    rect.Inflate(10);
 
     if (!rect.Contains(mouse))
-    {
-        if (++m_outsideCount > 5)
-            Dismiss();
-    }
-    else
-        m_outsideCount = 0;
+        Dismiss();
 }

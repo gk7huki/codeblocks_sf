@@ -208,7 +208,9 @@ bool DebugInterfaceFactory::ShowValueTooltip(const cb::shared_ptr<cbWatch> &watc
     {
         m_tooltip = new ValueTooltip(watch, Manager::Get()->GetAppWindow());
 #ifndef __WXMAC__
-        m_tooltip->Position(pt, wxSize(0, 0));
+        // NOTE (huki): Don't place tooltip directly under mouse cursor
+        // (allow user to use left click to dismiss tip, select text, etc).
+        m_tooltip->Position(pt, wxSize(0, 10));
 #endif
         // hide any other tooltips
         EditorBase *base = Manager::Get()->GetEditorManager()->GetActiveEditor();

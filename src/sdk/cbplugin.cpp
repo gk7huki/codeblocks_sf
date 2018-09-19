@@ -921,8 +921,8 @@ void cbDebuggerPlugin::RegisterValueTooltip()
 {
     typedef cbEventFunctor<cbDebuggerPlugin, CodeBlocksEvent> Event;
     Manager::Get()->RegisterEventSink(cbEVT_EDITOR_TOOLTIP, new Event(this, &cbDebuggerPlugin::ProcessValueTooltip));
-    Manager::Get()->RegisterEventSink(cbEVT_EDITOR_TOOLTIP_CANCEL,
-                                      new Event(this, &cbDebuggerPlugin::CancelValueTooltip));
+    //Manager::Get()->RegisterEventSink(cbEVT_EDITOR_TOOLTIP_CANCEL,
+    //                                  new Event(this, &cbDebuggerPlugin::CancelValueTooltip));
 }
 
 bool cbDebuggerPlugin::ShowValueTooltip(cb_unused int style)
@@ -971,7 +971,7 @@ void cbDebuggerPlugin::ProcessValueTooltip(CodeBlocksEvent& event)
     if (!token.empty())
     {
         pt = ed->GetControl()->ClientToScreen(pt);
-        OnValueTooltip(token, wxRect(pt.x - 5, pt.y, 10, 10));
+        OnValueTooltip(token, wxRect(pt.x, pt.y, 10, 10));
     }
 }
 
